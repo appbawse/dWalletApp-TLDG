@@ -370,6 +370,28 @@ func createBalance(userId: Int, tokenId: Int, balance: Decimal, merkleTreeId: In
     }
 }
 
+    func generateMerkleTree(treeHashes: [String]) -> String {
+    // Base case: If there's only one hash, return it as the Merkle root
+    if treeHashes.count == 1 {
+        return treeHashes[0]
+    }
+
+    // Recursive case: Divide the treeHashes into left and right halves
+    let midIndex = treeHashes.count / 2
+    let leftTreeHashes = Array(treeHashes.prefix(upTo: midIndex))
+    let rightTreeHashes = Array(treeHashes.suffix(from: midIndex))
+
+    // Recursively compute the Merkle roots of left and right subtrees
+    let leftMerkleRoot = generateMerkleTree(treeHashes: leftTreeHashes)
+    let rightMerkleRoot = generateMerkleTree(treeHashes: rightTreeHashes)
+
+    // Concatenate and hash the left and right Merkle roots to get the parent node
+    let combinedHashes = leftMerkleRoot + rightMerkleRoot
+    let parentHash = SHA256.hash(data: combinedHashes.data(using: .utf8)!).compactMap { String(format: "%02x", $0) }.joined()
+
+    return parentHash
+}
+
     func processMerkleTree(_ merkleTree: String) {
         // Perform necessary processing or calculations on the latest Merkle tree data
         print("Latest Merkle tree data: \(merkleTree)")
