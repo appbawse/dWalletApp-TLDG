@@ -311,11 +311,27 @@ func addTransactionToBlock(blockId: Int, transactionId: Int) throws {
     }
 }
 
-func createMerkleTree(shardingId: Int, rootHash: String) throws {
+func createMerkleTree(shardingId: Int, rootHash: String, treeHashes: [String]) throws -> String {
+    // Insert the root hash and sharding ID into the database
     let query = "INSERT INTO MerkleTree (sharding_id, root_hash) VALUES (\(shardingId), '\(rootHash)')"
     guard connection.query(statement: query) else {
         throw connection.errorMessage()
     }
+
+    // Now, create the Merkle tree using the provided tree hashes
+    // Create MerkleTools instance
+    let merkleTools = MerkleTools()
+
+    // Add the tree hashes as leaf nodes
+    for hash in treeHashes {
+        merkleTools.addLeaf(hash.data(using: .utf8)!)
+    }
+
+    // Generate the Merkle root
+    let root = merkleTools.makeTree()
+
+    // Return the Merkle root hash
+    return root.hash
 }
 
 func createMerkleTreeHash(merkleTreeId: Int, indexInTree: Int, hash: String) throws {
