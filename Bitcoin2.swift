@@ -801,6 +801,33 @@ func fetchPreviousData() -> String? {
     return previousData
 }
 
+func fetchTransactionsForCurrentBlock(_ blockId: Int) -> [Transaction]? {
+    var transactions: [Transaction] = []
+    
+    let query = "SELECT * FROM Transaction WHERE block_id = \(blockId)"
+    
+    guard let result = connection.query(statement: query) else {
+        return nil
+    }
+    
+    while let row = result.nextResult() {
+        guard let fromAddressId = row["from_address_id"] as? Int,
+              let toAddressId = row["to_address_id"] as? Int,
+              let balance = row["balance"] as? Decimal,
+              let timestamp = row["timestamp"] as? String,
+              let hash = row["hash"] as? String
+        else {
+            continue
+        }
+        
+        let transaction = Transaction(fromAddressId: fromAddressId, toAddressId: toAddressId, balance: balance, timestamp: timestamp, hash: hash)
+        transactions.append(transaction)
+    }
+    
+    return transactions
+}
+
+
 func generateNonce() -> Int {
     return Int.random(in: 1...100000)
 }
