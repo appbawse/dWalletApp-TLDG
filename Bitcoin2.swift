@@ -297,14 +297,9 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceBrowse
     guard connection.query(statement: query) else {
         throw connection.errorMessage()
     }
-    connection.close()
 }
 
 func addTransactionToBlock(blockId: Int, transactionId: Int) throws {
-    let connection = MySQL.Connection(host: "localhost", user: "your_username", password: "your_password", database: "your_database_name")
-    guard connection.connect() else {
-        throw connection.errorMessage()
-    }
     let query = "INSERT INTO BlockTransaction (block_id, transaction_id) VALUES (\(blockId), \(transactionId))"
     guard connection.query(statement: query) else {
         throw connection.errorMessage()
