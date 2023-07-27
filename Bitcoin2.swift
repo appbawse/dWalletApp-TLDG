@@ -270,6 +270,16 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceBrowse
     processMerkleTree(merkleTree)
 }
 
+    func getUserIdByUsername(_ username: String) -> Int? {
+    let query = "SELECT user_id FROM User WHERE username = '\(username)'"
+    
+    guard let result = connection.query(statement: query), let row = result.nextResult(), let userId = row["user_id"] as? Int else {
+        return nil
+    }
+    
+    return userId
+}
+
         // Create an address for the user
     func createAddress(userId: Int, address: String) throws {
         let addressQuery = "INSERT INTO Address (user_id, address) VALUES (\(userId), '\(address)')"
@@ -277,6 +287,17 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceBrowse
             throw mysqlConnection.errorMessage()
         }
     }
+
+    func getAddressIdByAddress(_ address: String, userId: Int) -> Int? {
+    let query = "SELECT address_id FROM Address WHERE user_id = \(userId) AND address = '\(address)'"
+    
+    guard let result = connection.query(statement: query), let row = result.nextResult(), let addressId = row["address_id"] as? Int else {
+        return nil
+    }
+    
+    return addressId
+}
+
 
     // Create a transaction
     func createTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String) throws {
