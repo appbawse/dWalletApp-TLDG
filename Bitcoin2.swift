@@ -396,16 +396,36 @@ func createBalance(userId: Int, tokenId: Int, balance: Decimal, merkleTreeId: In
     }
 
     // Generate the Merkle tree proof item for the given index
-    func generateProofItem(_ merkleTree: MerkleTree, at index: Int) -> String {
-        let proofItem = merkleTree.generateProofItem(at: index)
-        return proofItem.hash
+    func generateProofItem(itemHash: String, merkleRootHash: String) -> [String]? {
+    // Create MerkleTools instance
+    let merkleTools = MerkleTools()
+
+    // Set the Merkle root hash
+    merkleTools.merkleRoot = merkleRootHash
+
+    // Add the item hash as a target to generate the proof
+    merkleTools.addLeaf(itemHash.data(using: .utf8)!)
+
+    // Generate the proof for the item hash
+    return merkleTools.makeProof()
+}
+
+func generateProof(itemHashes: [String], merkleRootHash: String) -> [[String]] {
+    // Create MerkleTools instance
+    let merkleTools = MerkleTools()
+
+    // Set the Merkle root hash
+    merkleTools.merkleRoot = merkleRootHash
+
+    // Add the item hashes as targets to generate proofs
+    for hash in itemHashes {
+        merkleTools.addLeaf(hash.data(using: .utf8)!)
     }
 
-    // Generate the Merkle tree proof for the given index
-    func generateProof(_ merkleTree: MerkleTree, at index: Int) -> [String] {
-        let proof = merkleTree.generateProof(at: index)
-        return proof.map { $0.hash }
-    }
+    // Generate the proofs for the item hashes
+    return itemHashes.map { merkleTools.makeProof(targetIndex: $0) }
+}
+
 
     func processTransaction() throws {
     // Fetch previous data and generate transaction details
