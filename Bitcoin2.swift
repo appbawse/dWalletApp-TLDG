@@ -793,11 +793,20 @@ func verifyECDSASignature(header: Data, claims: Data, signature: Data, publicKey
     return publicKey.isValidSignature(derSignature, for: unsignedData)
 }
 
-func generateTransactionHash(_ transactionData: String) -> String {
-    let hash = SHA256.hash(data: transactionData.data(using: .utf8)!)
+func generateTransactionHash(transactionData: [String: Any]) -> String {
+    // Convert the transactionData dictionary to JSON data
+    guard let jsonData = try? JSONSerialization.data(withJSONObject: transactionData, options: []),
+          let jsonString = String(data: jsonData, encoding: .utf8)
+    else {
+        fatalError("Failed to serialize transaction data to JSON.")
+    }
+
+    // Calculate the hash of the JSON string using SHA-256
+    let hash = SHA256.hash(data: jsonString.data(using: .utf8)!)
     let transactionHash = hash.compactMap { String(format: "%02x", $0) }.joined()
     return transactionHash
 }
+
 
 func generateMerkleRootHash(_ treeHashes: [String]) -> String {
     var concatenatedHashes = treeHashes.joined()
