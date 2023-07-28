@@ -582,6 +582,24 @@ func generateProof(itemHashes: [String], merkleRootHash: String) -> [[String]] {
     try createBalance(userId: userId, tokenId: tokenId, balance: balanceAmount, merkleTreeId: 1)
 }
 
+    func createMCSession() -> MCSession {
+    // Set the display name for the local peer (you can use any string to identify the device)
+    let localPeerID = MCPeerID(displayName: UIDevice.current.name)
+
+    // Set the securityIdentity and encryptionPreference for secure communication
+    // Note: You need to set the appropriate security identity and encryption preference based on your use case.
+    // In this example, we are not using any specific security identity or encryption preference.
+    let securityIdentity: [Any]? = nil // Set to the identity of the user or device if needed
+    let encryptionPreference: MCEncryptionPreference = .optional
+
+    // Create the MCSession instance
+    let session = MCSession(peer: localPeerID, securityIdentity: securityIdentity, encryptionPreference: encryptionPreference)
+
+    // Set the delegate for handling session-related events
+    session.delegate = self // Assuming that the current class conforms to the MCSessionDelegate protocol
+
+    return session
+}
     
     // MARK: - MCNearbyServiceBrowserDelegate
 
