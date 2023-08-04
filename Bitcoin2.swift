@@ -64,72 +64,85 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceBrowse
         browser.startBrowsingForPeers()
         advertiser.startAdvertisingPeer()
 
-        connectToRedis()
+        connectToRedisAndGenerateProofs()
     }
 
-    func connectToRedis() {
-        let redis = Redis()
+// Connect to Redis and process the latest Merkle tree data
+func connectToRedisAndGenerateProofs() {
+    let redis = Redis()
 
-        redis.connect(host: "localhost", port: 6379) { (redisError: NSError?) in
-            guard redisError == nil else {
-                print("Error connecting to Redis: \(redisError!)")
+    redis.connect(host: "localhost", port: 6379) { (redisError: NSError?) in
+        guard redisError == nil else {
+            print("Error connecting to Redis: \(redisError!)")
+            return
+        }
+
+        redis.get("merkle_tree_data") { (redisResponse: RedisResponse?, redisError: NSError?) in
+            guard redisError == nil, let redisMerkleTree = redisResponse?.asString() else {
+                print("Error retrieving Merkle tree data from Redis: \(redisError!)")
                 return
             }
 
-            redis.get("merkle_tree_data") { (redisResponse: RedisResponse?, redisError: NSError?) in
-                guard redisError == nil, let redisMerkleTree = redisResponse?.asString() else {
-                    print("Error retrieving Merkle tree data from Redis: \(redisError!)")
+            // Retrieve the latest Merkle tree data from MySQL
+            let latestMerkleTreeQuery = "SELECT tree_data FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"
+            mysqlConnection.query(latestMerkleTreeQuery) { (mysqlResult: MySQLResult?) in
+                guard let mysqlResult = mysqlResult else {
+                    print("Error retrieving Merkle tree data from MySQL: \(mysqlConnection.errorCode()) \(mysqlConnection.errorMessage())")
                     return
                 }
 
-                // Retrieve the latest Merkle tree data from MySQL
-                let latestMerkleTreeQuery = "SELECT tree_data FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"
-                mysqlConnection.query(latestMerkleTreeQuery) { (mysqlResult: MySQLResult?) in
-                    guard let mysqlResult = mysqlResult else {
-                        print("Error retrieving Merkle tree data from MySQL: \(mysqlConnection.errorCode()) \(mysqlConnection.errorMessage())")
-                        return
-                    }
+                if let mysqlMerkleTree = mysqlResult.next()?["tree_data"] as? String {
+                    // Compare the Merkle tree data from Redis and MySQL
+                    let redisTimestampQuery = "GET merkle_tree_timestamp"
+                    let mysqlTimestampQuery = "SELECT timestamp FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"
+                    let multi = redis.multi()
+                    multi.sendCommand("GET", params: ["merkle_tree_timestamp"])
+                    multi.sendQuery(mysqlTimestampQuery)
 
-                    if let mysqlMerkleTree = mysqlResult.next()?[0]?.asString() {
-                        // Compare the Merkle tree data from Redis and MySQL
-                        let redisTimestampQuery = "GET merkle_tree_timestamp"
-                        let mysqlTimestampQuery = "SELECT timestamp FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"
-                        let multi = redis.multi()
-                        multi.sendCommand("GET", params: ["merkle_tree_timestamp"])
-                        multi.sendCommand("SELECT", params: ["timestamp FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"])
-
-                        multi.exec { (redisResponses: [RedisResponse]?, redisError: NSError?) in
-                            guard redisError == nil, let redisResponses = redisResponses else {
-                                print("Error retrieving timestamps from Redis: \(redisError!)")
-                                return
-                            }
-
-                            let redisTimestamp = redisResponses[0].asString()
-                            let mysqlTimestamp = redisResponses[1].asString()
-
-                            if let redisTimestamp = redisTimestamp, let mysqlTimestamp = mysqlTimestamp {
-                                if let redisTimestampInt = Int(redisTimestamp), let mysqlTimestampInt = Int(mysqlTimestamp) {
-                                    if redisTimestampInt >= mysqlTimestampInt {
-                                        processMerkleTree(redisMerkleTree)
-                                    } else {
-                                        processMerkleTree(mysqlMerkleTree)
-                                    }
-                                }
-                            } else if let redisTimestamp = redisTimestamp {
-                                processMerkleTree(redisMerkleTree)
-                            } else if let mysqlTimestamp = mysqlTimestamp {
-                                processMerkleTree(mysqlMerkleTree)
-                            } else {
-                                print("No Merkle tree data found")
-                            }
+                    multi.exec { (redisResponses: [RedisResponse]?, redisError: NSError?) in
+                        guard redisError == nil, let redisResponses = redisResponses else {
+                            print("Error retrieving timestamps from Redis: \(redisError!)")
+                            return
                         }
-                    } else {
-                        print("No Merkle tree data found in MySQL")
+
+                        let redisTimestamp = redisResponses[0].asString()
+                        let mysqlTimestamp = redisResponses[1].asInteger()
+
+                        if let redisTimestamp = redisTimestamp, let mysqlTimestamp = mysqlTimestamp {
+                            if let redisTimestampInt = Int(redisTimestamp), let mysqlTimestampInt = Int(mysqlTimestamp) {
+                                if redisTimestampInt >= mysqlTimestampInt {
+                                    // Process the Merkle tree data from Redis
+                                    processMerkleTree(redisMerkleTree)
+                                    // Generate Merkle tree proofs for the specified items
+                                    generateProofExample()
+                                } else {
+                                    // Process the Merkle tree data from MySQL
+                                    processMerkleTree(mysqlMerkleTree)
+                                    // Generate Merkle tree proofs for the specified items
+                                    generateProofExample()
+                                }
+                            }
+                        } else if let redisTimestamp = redisTimestamp {
+                            // Process the Merkle tree data from Redis
+                            processMerkleTree(redisMerkleTree)
+                            // Generate Merkle tree proofs for the specified items
+                            generateProofExample()
+                        } else if let mysqlTimestamp = mysqlTimestamp {
+                            // Process the Merkle tree data from MySQL
+                            processMerkleTree(mysqlMerkleTree)
+                            // Generate Merkle tree proofs for the specified items
+                            generateProofExample()
+                        } else {
+                            print("No Merkle tree data found")
+                        }
                     }
+                } else {
+                    print("No Merkle tree data found in MySQL")
                 }
             }
         }
     }
+}
 
     func createUser(username: String, passwordHash: String, salt: String, publicKey: String, address: String, fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String, merkleTree: String, treeHashes: [String], indexInProof: Int, isRight: Bool, proofItemHash: String) throws {
     // Create a user
@@ -391,79 +404,10 @@ func createBalance(userId: Int, tokenId: Int, balance: Decimal, merkleTreeId: In
     }
 }
 
-    func generateMerkleTree(treeHashes: [String]) -> String {
-    // Base case: If there's only one hash, return it as the Merkle root
-    if treeHashes.count == 1 {
-        return treeHashes[0]
-    }
-
-    // Recursive case: Divide the treeHashes into left and right halves
-    let midIndex = treeHashes.count / 2
-    let leftTreeHashes = Array(treeHashes.prefix(upTo: midIndex))
-    let rightTreeHashes = Array(treeHashes.suffix(from: midIndex))
-
-    // Recursively compute the Merkle roots of left and right subtrees
-    let leftMerkleRoot = generateMerkleTree(treeHashes: leftTreeHashes)
-    let rightMerkleRoot = generateMerkleTree(treeHashes: rightTreeHashes)
-
-    // Concatenate and hash the left and right Merkle roots to get the parent node
-    let combinedHashes = leftMerkleRoot + rightMerkleRoot
-    let parentHash = SHA256.hash(data: combinedHashes.data(using: .utf8)!).compactMap { String(format: "%02x", $0) }.joined()
-
-    return parentHash
-}
-
     func processMerkleTree(_ merkleTree: String) {
         // Perform necessary processing or calculations on the latest Merkle tree data
         print("Latest Merkle tree data: \(merkleTree)")
     }
-
-    // Generate the Merkle root hash
-    func generateMerkleRootHash(_ treeHashes: [String]) -> String {
-        let merkleTools = MerkleTools()
-
-        // Add the tree hashes as leaf nodes
-        for hash in treeHashes {
-            merkleTools.addLeaf(hash.data(using: .utf8)!)
-        }
-
-        // Generate the Merkle root
-        let root = merkleTools.makeTree()
-
-        return root.hash
-    }
-
-    // Generate the Merkle tree proof item for the given index
-    func generateProofItem(itemHash: String, merkleRootHash: String) -> [String]? {
-    // Create MerkleTools instance
-    let merkleTools = MerkleTools()
-
-    // Set the Merkle root hash
-    merkleTools.merkleRoot = merkleRootHash
-
-    // Add the item hash as a target to generate the proof
-    merkleTools.addLeaf(itemHash.data(using: .utf8)!)
-
-    // Generate the proof for the item hash
-    return merkleTools.makeProof()
-}
-
-func generateProof(itemHashes: [String], merkleRootHash: String) -> [[String]] {
-    // Create MerkleTools instance
-    let merkleTools = MerkleTools()
-
-    // Set the Merkle root hash
-    merkleTools.merkleRoot = merkleRootHash
-
-    // Add the item hashes as targets to generate proofs
-    for hash in itemHashes {
-        merkleTools.addLeaf(hash.data(using: .utf8)!)
-    }
-
-    // Generate the proofs for the item hashes
-    return itemHashes.map { merkleTools.makeProof(targetIndex: $0) }
-}
-
 
     func processTransaction() throws {
     // Fetch previous data and generate transaction details
