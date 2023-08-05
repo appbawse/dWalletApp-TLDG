@@ -388,6 +388,50 @@ func connectToRedisAndGenerateProofs() {
     return addressId
 }
 
+    // Function to create a new transaction and save it to the database
+func createAndSaveTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal) {
+    // Get the current timestamp
+    let timestamp = getCurrentTimestamp()
+
+    // Generate a random nonce
+    let nonce = generateNonce()
+
+    // Create the transaction data dictionary
+    let transactionData: [String: Any] = [
+        "from_address_id": fromAddressId,
+        "to_address_id": toAddressId,
+        "balance": balance,
+        "timestamp": timestamp,
+        "nonce": nonce
+    ]
+
+    // Generate the transaction hash
+    let transactionHash = generateTransactionHash(transactionData: transactionData)
+
+    // Create the Transaction instance
+    let transaction = Transaction(
+        fromAddressId: fromAddressId,
+        toAddressId: toAddressId,
+        balance: balance,
+        timestamp: timestamp,
+        nonce: nonce,
+        hash: transactionHash
+    )
+
+    // Save the transaction to the database
+    do {
+        try createTransaction(
+            fromAddressId: transaction.fromAddressId,
+            toAddressId: transaction.toAddressId,
+            balance: transaction.balance,
+            hash: transaction.hash
+        )
+        print("Transaction created and saved to the database.")
+    } catch {
+        print("Failed to save the transaction to the database: \(error)")
+    }
+}
+
 
     // Create a transaction
     func createTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String) throws {
@@ -708,6 +752,15 @@ func processMerkleTree(_ merkleTree: String) {
         mcBrowser.delegate = self
         present(mcBrowser, animated: true, completion: nil)
     }
+
+    @IBAction func createAndSaveTransactionButtonTapped(_ sender: UIButton) {
+    let fromAddressId = 456
+    let toAddressId = 789
+    let balance: Decimal = 10.0
+
+    createAndSaveTransaction(fromAddressId: fromAddressId, toAddressId: toAddressId, balance: balance)
+}
+
 
     @IBAction func sendBlockMined(_ sender: UIButton) {
         // Generate the encrypted JWT
