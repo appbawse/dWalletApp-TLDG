@@ -21,6 +21,12 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceBrowse
         mysqlConnection.close()
     }
 
+    // Connect these outlets to the corresponding UI elements in your storyboard
+    @IBOutlet private weak var fromAddressIdTextField: UITextField!
+    @IBOutlet private weak var toAddressIdTextField: UITextField!
+    @IBOutlet private weak var balanceTextField: UITextField!
+    @IBOutlet private weak var createAndSaveTransactionButton: UIButton!
+    
     struct User {
     let id: Int
     let username: String
@@ -786,14 +792,34 @@ func processMerkleTree(_ merkleTree: String) {
         present(mcBrowser, animated: true, completion: nil)
     }
 
-    @IBAction func createAndSaveTransactionButtonTapped(_ sender: UIButton) {
-    let fromAddressId = 456
-    let toAddressId = 789
-    let balance: Decimal = 10.0
+  @IBAction func createAndSaveTransactionButtonTapped(_ sender: UIButton) {
+        // Get the input values from the text fields
+        guard let fromAddressIdText = fromAddressIdTextField.text,
+              let toAddressIdText = toAddressIdTextField.text,
+              let balanceText = balanceTextField.text,
+              let fromAddressId = Int(fromAddressIdText),
+              let toAddressId = Int(toAddressIdText),
+              let balance = Decimal(string: balanceText)
+        else {
+            print("Invalid input values.")
+            return
+        }
 
-    createAndSaveTransaction(fromAddressId: fromAddressId, toAddressId: toAddressId, balance: balance)
-}
+        // Create and save the transaction
+        createAndSaveTransaction(fromAddressId: fromAddressId, toAddressId: toAddressId, balance: balance)
 
+        // Optionally, you can display a success message or perform other actions after creating and saving the transaction.
+        // For example, show an alert:
+        let alertController = UIAlertController(title: "Transaction Saved", message: "Transaction created and saved successfully!", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+        alertController.addAction(okAction)
+        present(alertController, animated: true, completion: nil)
+
+        // Clear the text fields after creating and saving the transaction
+        fromAddressIdTextField.text = ""
+        toAddressIdTextField.text = ""
+        balanceTextField.text = ""
+    }
 
     @IBAction func sendBlockMined(_ sender: UIButton) {
         // Generate the encrypted JWT
