@@ -469,9 +469,21 @@ func createBalance(userId: Int, tokenId: Int, balance: Decimal, merkleTreeId: In
 }
 
     func processMerkleTree(_ merkleTree: String) {
-        // Perform necessary processing or calculations on the latest Merkle tree data
-        print("Latest Merkle tree data: \(merkleTree)")
+    guard let jsonData = merkleTree.data(using: .utf8) else {
+        print("Error: Invalid JSON data for Merkle tree.")
+        return
     }
+    
+    do {
+        let treeData = try JSONDecoder().decode(MerkleTreeData.self, from: jsonData)
+        print("Merkle Root Hash: \(treeData.rootHash)")
+        print("Tree Hashes: \(treeData.treeHashes)")
+        
+        // Perform additional processing as needed
+    } catch {
+        print("Error decoding JSON data for Merkle tree: \(error)")
+    }
+}
 
     func processTransaction() throws {
     // Fetch previous data and generate transaction details
