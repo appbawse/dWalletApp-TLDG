@@ -411,6 +411,21 @@ func createAndSaveTransaction(fromAddressId: Int, toAddressId: Int, balance: Dec
     return merkleTools.validate()
 }
 
+    func verifyTransactionWithMerkleProof(transactionHashToVerify: String, merkleRoot: String) {
+    let merkleProofData = fetchMerkleProofData(transactionHash: transactionHashToVerify)
+    let isProofValid = verifyMerkleProof(transactionHash: transactionHashToVerify, merkleProofData: merkleProofData, merkleRoot: merkleRoot)
+
+    if isProofValid {
+        print("Merkle proof is valid for the transaction.")
+    } else {
+        print("Merkle proof is invalid for the transaction.")
+    }
+}
+
+    let transactionHashToVerify = "transaction_hash_to_verify" // Replace this with the actual transaction hash you want to verify.
+    let merkleRoot = "merkle_root" // Replace this with the actual Merkle root.
+verifyTransactionWithMerkleProof(transactionHashToVerify: transactionHashToVerify, merkleRoot: merkleRoot)
+
     // Generate a random nonce
     let nonce = generateNonce()
 
