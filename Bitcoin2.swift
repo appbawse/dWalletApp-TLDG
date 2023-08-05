@@ -34,16 +34,66 @@ struct Address {
     let userId: Int
     let address: String
 }
-    
-    struct Transaction {
-        let fromAddressID: Int
-        let toAddressID: Int
-        let previousHash: String
-        let balance: Decimal
-        let timestamp: String
-        let nonce: Int
-        let hash: String
-    }
+
+struct Transaction {
+    let id: Int
+    let fromAddressId: Int
+    let toAddressId: Int
+    let balance: Decimal
+    let timestamp: Date
+    let hash: String
+}
+
+struct Block {
+    let id: Int
+    let version: Int
+    let timestamp: Date
+    let previousHash: String
+    let merkleRoot: String
+    let hash: String
+}
+
+struct BlockTransaction {
+    let id: Int
+    let blockId: Int
+    let transactionId: Int
+}
+
+struct MerkleTree {
+    let id: Int
+    let shardingId: Int
+    let rootHash: String
+}
+
+struct MerkleTreeHash {
+    let id: Int
+    let merkleTreeId: Int
+    let indexInTree: Int
+    let hash: String
+}
+
+struct MerkleTreeProofItem {
+    let id: Int
+    let merkleTreeProofId: Int
+    let indexInProof: Int
+    let isRight: Bool
+    let hash: String
+}
+
+struct MerkleTreeProof {
+    let id: Int
+    let merkleTreeId: Int
+    let merkleTreeHashId: Int
+    let merkleTreeProofItemId: Int
+}
+
+struct Balance {
+    let id: Int
+    let userId: Int
+    let tokenId: Int
+    let balance: Decimal
+    let merkleTreeId: Int
+}
 
     struct MerkleTreeData {
         let rootHash: String
