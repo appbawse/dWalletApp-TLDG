@@ -100,15 +100,28 @@ struct Balance {
         let treeHashes: [String]
     }
     
-    // Other properties
-    var peerID: MCPeerID!
-    var session: MCSession!
-    var browser: MCNearbyServiceBrowser!
-    var advertiser: MCNearbyServiceAdvertiser!
-    let privateKey = P256.KeyAgreement.PrivateKey()
-    let publicKey = privateKey.publicKey
-    let jwtSecret = "your_jwt_secret"
-    let merkleTools = MerkleTools()
+func generateRandomJWTSecret() -> String {
+    // Generate a random 256-bit key
+    let key = SymmetricKey(size: .bits256)
+    
+    // Get the raw data representation of the key
+    let keyData = key.withUnsafeBytes { Data($0) }
+    
+    // Encode the key data as a base64 string
+    let jwtSecret = keyData.base64EncodedString()
+    
+    return jwtSecret
+}
+
+// Other properties
+var peerID: MCPeerID!
+var session: MCSession!
+var browser: MCNearbyServiceBrowser!
+var advertiser: MCNearbyServiceAdvertiser!
+let privateKey = P256.KeyAgreement.PrivateKey()
+let publicKey = privateKey.publicKey
+let jwtSecret = generateRandomJWTSecret() // Use the function to generate a random JWT secret
+let merkleTools = MerkleTools()
 
     override func viewDidLoad() {
         super.viewDidLoad()
