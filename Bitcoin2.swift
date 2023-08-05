@@ -20,6 +20,20 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceBrowse
         // Close the MySQL connection when the view controller is deallocated
         mysqlConnection.close()
     }
+
+    struct User {
+    let id: Int
+    let username: String
+    let passwordHash: String
+    let salt: String
+    let publicKey: String
+}
+
+struct Address {
+    let id: Int
+    let userId: Int
+    let address: String
+}
     
     struct Transaction {
         let fromAddressID: Int
