@@ -393,6 +393,24 @@ func createAndSaveTransaction(fromAddressId: Int, toAddressId: Int, balance: Dec
     // Get the current timestamp
     let timestamp = getCurrentTimestamp()
 
+    func verifyMerkleProof(transactionHash: String, merkleProofData: [[String: String]], merkleRoot: String) -> Bool {
+    merkleTools.resetTree()
+
+    // Add the transaction hash as a target for proof verification
+    merkleTools.addLeaves([transactionHash])
+
+    // Add the Merkle proof data to the MerkleTools instance
+    for proofItem in merkleProofData {
+        let hash = proofItem["hash"] ?? ""
+        let position = Int(proofItem["position"] ?? "0") ?? 0
+        let isRight = proofItem["isRight"] == "1" ? true : false
+        merkleTools.addProof(position, hash: hash, isRight: isRight)
+    }
+
+    // Verify the proof for the transaction hash against the given Merkle root
+    return merkleTools.validate()
+}
+
     // Generate a random nonce
     let nonce = generateNonce()
 
