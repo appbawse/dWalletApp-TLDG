@@ -564,9 +564,8 @@ func createBalance(userId: Int, tokenId: Int, balance: Decimal, merkleTreeId: In
     }
 }
 
-func processMerkleTree(_ merkleTree: String) {
-    // ... (The same as your existing function, but update the JSONDecoder as shown below)
-    guard let jsonData = merkleTree.data(using: .utf8) else {
+func processMerkleTree(jsonString: String) {
+    guard let jsonData = jsonString.data(using: .utf8) else {
         print("Error: Invalid JSON data for Merkle tree.")
         return
     }
