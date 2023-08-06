@@ -483,7 +483,8 @@ verifyTransactionWithMerkleProof(transactionHashToVerify: transactionHashToVerif
         }
     }
     
-    func createBlock(version: Int, previousHash: String, merkleRoot: String, hash: String) throws {
+// Function to create a new block and save it to the database
+func createBlock(version: Int, previousHash: String, merkleRoot: String, hash: String) throws {
     let query = """
         INSERT INTO Block (version, timestamp, previous_hash, merkle_root, hash)
         VALUES (\(version), NOW(), '\(previousHash)', '\(merkleRoot)', '\(hash)')
@@ -493,6 +494,7 @@ verifyTransactionWithMerkleProof(transactionHashToVerify: transactionHashToVerif
     }
 }
 
+// Function to add a transaction to the block and save it to the database
 func addTransactionToBlock(blockId: Int, transactionId: Int) throws {
     let query = "INSERT INTO BlockTransaction (block_id, transaction_id) VALUES (\(blockId), \(transactionId))"
     guard connection.query(statement: query) else {
@@ -500,6 +502,27 @@ func addTransactionToBlock(blockId: Int, transactionId: Int) throws {
     }
 }
 
+// Function to create a new block and add a transaction to it
+func createBlockAndAddTransaction(block: Block, blockTransaction: BlockTransaction) {
+    do {
+        try createBlock(
+            version: block.version,
+            previousHash: block.previousHash,
+            merkleRoot: block.merkleRoot,
+            hash: block.hash
+        )
+        print("Block created and saved to the database.")
+
+        try addTransactionToBlock(
+            blockId: blockTransaction.blockId,
+            transactionId: blockTransaction.transactionId
+        )
+        print("Transaction added to the block.")
+    } catch {
+        print("Error: \(error)")
+    }
+}
+    
 func createMerkleTree(shardingId: Int, rootHash: String, treeHashes: [String]) throws -> String {
     // Insert the root hash and sharding ID into the database
     let query = "INSERT INTO MerkleTree (sharding_id, root_hash) VALUES (\(shardingId), '\(rootHash)')"
