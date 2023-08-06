@@ -392,22 +392,52 @@ func getUserById(_ userId: Int) -> User? {
     return User(id: userId, username: username, passwordHash: passwordHash, salt: salt, publicKey: publicKey)
 }
 
-        // Create an address for the user
-    func createAddress(userId: Int, address: String) throws {
-        let addressQuery = "INSERT INTO Address (user_id, address) VALUES (\(userId), '\(address)')"
+// Function to create a new address and save it to the database
+func createAddress(address: Address) {
+    do {
+        let addressQuery = "INSERT INTO Address (user_id, address) VALUES (\(address.userId), '\(address.address)')"
         guard mysqlConnection.query(statement: addressQuery) else {
             throw mysqlConnection.errorMessage()
         }
+        print("Address created and saved to the database.")
+        
+        // Verify the address entry
+        if let addressId = getAddressIdByAddress(address.address, userId: address.userId) {
+            let fetchedAddress = getAddressById(addressId)
+            if fetchedAddress == address {
+                print("Address entry verified successfully.")
+            } else {
+                print("Address entry verification failed.")
+            }
+        }
+    } catch {
+        print("Failed to create the address: \(error)")
     }
+}
 
-    func getAddressIdByAddress(_ address: String, userId: Int) -> Int? {
+// Function to get the address ID by address and user ID
+func getAddressIdByAddress(_ address: String, userId: Int) -> Int? {
     let query = "SELECT address_id FROM Address WHERE user_id = \(userId) AND address = '\(address)'"
     
-    guard let result = connection.query(statement: query), let row = result.nextResult(), let addressId = row["address_id"] as? Int else {
+    guard let result = mysqlConnection.query(statement: query), let row = result.nextResult(), let addressId = row["address_id"] as? Int else {
         return nil
     }
     
     return addressId
+}
+
+// Function to get an address by address ID
+func getAddressById(_ addressId: Int) -> Address? {
+    let query = "SELECT * FROM Address WHERE address_id = \(addressId)"
+    
+    guard let result = mysqlConnection.query(statement: query), let row = result.nextResult(),
+          let userId = row["user_id"] as? Int,
+          let address = row["address"] as? String
+    else {
+        return nil
+    }
+    
+    return Address(id: addressId, userId: userId, address: address)
 }
 
     // Function to create a new transaction and save it to the database
