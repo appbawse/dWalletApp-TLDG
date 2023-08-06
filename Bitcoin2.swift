@@ -376,6 +376,22 @@ func connectToRedisAndGenerateProofs() {
     return userId
 }
 
+    // Function to get a user by user ID
+func getUserById(_ userId: Int) -> User? {
+    let query = "SELECT * FROM User WHERE user_id = \(userId)"
+    
+    guard let result = connection.query(statement: query), let row = result.nextResult(),
+          let username = row["username"] as? String,
+          let passwordHash = row["password_hash"] as? String,
+          let salt = row["salt"] as? String,
+          let publicKey = row["public_key"] as? String
+    else {
+        return nil
+    }
+    
+    return User(id: userId, username: username, passwordHash: passwordHash, salt: salt, publicKey: publicKey)
+}
+
         // Create an address for the user
     func createAddress(userId: Int, address: String) throws {
         let addressQuery = "INSERT INTO Address (user_id, address) VALUES (\(userId), '\(address)')"
