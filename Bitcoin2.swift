@@ -865,9 +865,9 @@ func processMerkleTree(jsonString: String) {
     
     // MARK: - JWT Generation
 
-    func generateEncryptedJWT() -> String? {
-        let payload: [String: Any] = [
-            "user_id": 123, // Replace with the actual user ID
+func generateEncryptedJWT() -> String? {
+    let payload: [String: Any] = [
+           "user_id": 123, // Replace with the actual user ID
             "transaction": [
                 "from_address_id": 456, // Replace with the actual from address ID
                 "to_address_id": 789, // Replace with the actual to address ID
@@ -883,45 +883,42 @@ func processMerkleTree(jsonString: String) {
                 "tree_hash_2": "tree_hash_2", // Replace with the actual tree hash 2
                 // Include more tree hashes as needed
             ]
-        ]
+    ]
 
-        // Convert the payload to JSON data
-        guard let payloadData = try? JSONSerialization.data(withJSONObject: payload, options: []) else {
-            return nil
-        }
-
-        // Generate the JWT using the payload and secret
-        let jwt = JWT(payload: payloadData)
-        guard let jwtData = try? jwt.sign(using: .rs256(privateKey: privateKey)) else {
-            return nil
-        }
-
-        // Create MerkleTools instance
-        let merkleTools = MerkleTools()
-
-        // Add the JWT data as a leaf node
-        merkleTools.addLeaf(jwtData)
-
-        // Add the tree hashes from the "merkle_tree" section
-        if let merkleTree = payload["merkle_tree"] as? [String: String] {
-            for (_, value) in merkleTree {
-                merkleTools.addLeaf(value.data(using: .utf8)!)
-            }
-        }
-
-        // Generate the Merkle root
-        let root = merkleTools.makeTree()
-
-        // Encrypt the Merkle root data using RSA
-        guard let encryptedData = encrypt(data: root.data) else {
-            return nil
-        }
-
-        // Encode the encrypted Merkle root data as a base64 string
-        let encryptedRootString = encryptedData.base64EncodedString()
-
-        return encryptedRootString
+    // Convert the payload to JSON data
+    guard let payloadData = try? JSONSerialization.data(withJSONObject: payload, options: []) else {
+        return nil
     }
+
+    // Generate the JWT using the payload and secret
+    let jwt = JWT(payload: payloadData)
+    guard let jwtData = try? jwt.sign(using: .rs256(privateKey: privateKey)) else {
+        return nil
+    }
+
+    // Create MerkleTools instance
+    let merkleTools = MerkleTools()
+
+    // Add the JWT data as a leaf node
+    merkleTools.addLeaf(jwtData)
+
+    // Add the tree hashes from the "merkle_tree" section
+    if let merkleTree = payload["merkle_tree"] as? [String: String] {
+        for (_, value) in merkleTree {
+            merkleTools.addLeaf(value.data(using: .utf8)!)
+        }
+    }
+
+    // Generate the Merkle root
+    let root = merkleTools.makeTree()
+
+    // Encrypt the Merkle root data using RSA
+    guard let encryptedData = encrypt(data: root.data) else {
+        return nil
+    }
+
+    // Encode the encrypted Merkle root data as a base64 string and directly return it
+    return encryptedData.base64EncodedString()
 }
 
 import Foundation
