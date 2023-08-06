@@ -440,6 +440,17 @@ func getAddressById(_ addressId: Int) -> Address? {
     return Address(id: addressId, userId: userId, address: address)
 }
 
+    // Create a transaction
+    func createTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String) throws {
+        let transactionQuery = """
+            INSERT INTO Transaction (from_address_id, to_address_id, balance, timestamp, hash)
+            VALUES (\(fromAddressId), \(toAddressId), \(balance), NOW(), '\(hash)')
+        """
+        guard mysqlConnection.query(statement: transactionQuery) else {
+            throw mysqlConnection.errorMessage()
+        }
+    }
+    
     // Function to create a new transaction and save it to the database
 func createAndSaveTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal) {
     // Get the current timestamp
@@ -517,18 +528,6 @@ verifyTransactionWithMerkleProof(transactionHashToVerify: transactionHashToVerif
     }
 }
 
-
-    // Create a transaction
-    func createTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String) throws {
-        let transactionQuery = """
-            INSERT INTO Transaction (from_address_id, to_address_id, balance, timestamp, hash)
-            VALUES (\(fromAddressId), \(toAddressId), \(balance), NOW(), '\(hash)')
-        """
-        guard mysqlConnection.query(statement: transactionQuery) else {
-            throw mysqlConnection.errorMessage()
-        }
-    }
-    
 // Function to create a new block and save it to the database
 func createBlock(version: Int, previousHash: String, merkleRoot: String, hash: String) throws {
     let query = """
