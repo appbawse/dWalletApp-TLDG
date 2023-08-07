@@ -553,6 +553,28 @@ verifyTransactionWithMerkleProof(transactionHashToVerify: transactionHashToVerif
     }
 }
 
+    func getTransactionsByUserIDAndAddress(userID: String, address: String) -> [Transaction] {
+    var userTransactions: [Transaction] = []
+
+    // Step 1: Get User Information (Addresses)
+    let userAddresses = getUserAddresses(userID: userID) // Replace with your logic
+
+    // Step 2: Query Transactions by Address
+    for addr in userAddresses {
+        if addr == address {
+            let transactions = getTransactionsByAddress(address: addr) // Replace with blockchain API
+            userTransactions.append(contentsOf: transactions)
+        }
+    }
+
+    // Step 3: Filter and Step 4: Process Transactions
+    let filteredTransactions = userTransactions.filter { transaction in
+        return transaction.sender == userID || transaction.recipient == userID
+    }
+
+    return filteredTransactions
+}
+
 // Function to create a new block and save it to the database
 func createBlock(version: Int, previousHash: String, merkleRoot: String, hash: String) throws {
     let query = """
