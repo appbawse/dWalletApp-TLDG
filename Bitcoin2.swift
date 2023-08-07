@@ -440,6 +440,31 @@ func getAddressById(_ addressId: Int) -> Address? {
     return Address(id: addressId, userId: userId, address: address)
 }
 
+    func getAddressByUserId(_ userId: Int) -> Address? {
+    let query = "SELECT * FROM Address WHERE user_id = \(userId)"
+    
+    guard let result = mysqlConnection.query(statement: query), let row = result.nextResult(),
+          let addressId = row["address_id"] as? Int,
+          let address = row["address"] as? String
+    else {
+        return nil
+    }
+    
+    return Address(id: addressId, userId: userId, address: address)
+}
+
+// Usage
+if let userId = getUserIdByUsername("username123") {
+    if let address = getAddressByUserId(userId) {
+        print("User's address: \(address.address)")
+    } else {
+        print("Address not found for the given user ID.")
+    }
+} else {
+    print("User not found.")
+}
+
+
     // Create a transaction
     func createTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String) throws {
         let transactionQuery = """
