@@ -453,18 +453,6 @@ func getAddressById(_ addressId: Int) -> Address? {
     return Address(id: addressId, userId: userId, address: address)
 }
 
-// Usage
-if let userId = getUserIdByUsername("username123") {
-    if let address = getAddressByUserId(userId) {
-        print("User's address: \(address.address)")
-    } else {
-        print("Address not found for the given user ID.")
-    }
-} else {
-    print("User not found.")
-}
-
-
     // Create a transaction
     func createTransaction(fromAddressId: Int, toAddressId: Int, balance: Decimal, hash: String) throws {
         let transactionQuery = """
