@@ -150,80 +150,169 @@ let merkleTools = MerkleTools()
         connectToRedisAndGenerateProofs()
     }
 
-// Connect to Redis and process the latest Merkle tree data
+// Function to connect to Redis, retrieve Merkle tree data, and generate proofs
 func connectToRedisAndGenerateProofs() {
-    let redis = Redis()
+    // Create Redis connection
+    let redis = RedisConnection.make()
 
-    redis.connect(host: "localhost", port: 6379) { (redisError: NSError?) in
+    redis.connect(host: "localhost", port: 6379) { redisError in
         guard redisError == nil else {
             print("Error connecting to Redis: \(redisError!)")
             return
         }
 
-        redis.get("merkle_tree_data") { (redisResponse: RedisResponse?, redisError: NSError?) in
-            guard redisError == nil, let redisMerkleTree = redisResponse?.asString() else {
+        // Retrieve Merkle tree data from Redis
+        redis.get("merkle_tree_data") { redisResponse, redisError in
+            guard redisError == nil, let redisMerkleTree = redisResponse?.string else {
                 print("Error retrieving Merkle tree data from Redis: \(redisError!)")
                 return
             }
 
-            // Retrieve the latest Merkle tree data from MySQL
+            // MySQL connection details for two databases
+            let mysqlConfig1 = MySQLDatabaseConfig(hostname: "localhost", username: "user1", password: "password1", database: "db1")
+            let mysqlConfig2 = MySQLDatabaseConfig(hostname: "localhost", username: "user2", password: "password2", database: "db2")
+
+            // Create MySQL connections
+            let mysql1 = MySQLConnectionSource(config: mysqlConfig1)
+            let mysql2 = MySQLConnectionSource(config: mysqlConfig2)
+
+            // Retrieve Merkle tree data from MySQL databases
             let latestMerkleTreeQuery = "SELECT tree_data FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"
-            mysqlConnection.query(latestMerkleTreeQuery) { (mysqlResult: MySQLResult?) in
-                guard let mysqlResult = mysqlResult else {
-                    print("Error retrieving Merkle tree data from MySQL: \(mysqlConnection.errorCode()) \(mysqlConnection.errorMessage())")
-                    return
-                }
+            let mysqlConnections = [mysql1, mysql2]
 
-                if let mysqlMerkleTree = mysqlResult.next()?["tree_data"] as? String {
-                    // Compare the Merkle tree data from Redis and MySQL
-                    let redisTimestampQuery = "GET merkle_tree_timestamp"
-                    let mysqlTimestampQuery = "SELECT timestamp FROM merkle_tree ORDER BY timestamp DESC LIMIT 1"
-                    let multi = redis.multi()
-                    multi.sendCommand("GET", params: ["merkle_tree_timestamp"])
-                    multi.sendQuery(mysqlTimestampQuery)
-
-                    multi.exec { (redisResponses: [RedisResponse]?, redisError: NSError?) in
-                        guard redisError == nil, let redisResponses = redisResponses else {
-                            print("Error retrieving timestamps from Redis: \(redisError!)")
-                            return
-                        }
-
-                        let redisTimestamp = redisResponses[0].asString()
-                        let mysqlTimestamp = redisResponses[1].asInteger()
-
-                        if let redisTimestamp = redisTimestamp, let mysqlTimestamp = mysqlTimestamp {
-                            if let redisTimestampInt = Int(redisTimestamp), let mysqlTimestampInt = Int(mysqlTimestamp) {
-                                if redisTimestampInt >= mysqlTimestampInt {
-                                    // Process the Merkle tree data from Redis
-                                    processMerkleTree(redisMerkleTree)
-                                    // Generate Merkle tree proofs for the specified items
-                                    generateProofExample()
-                                } else {
-                                    // Process the Merkle tree data from MySQL
-                                    processMerkleTree(mysqlMerkleTree)
-                                    // Generate Merkle tree proofs for the specified items
-                                    generateProofExample()
-                                }
-                            }
-                        } else if let redisTimestamp = redisTimestamp {
-                            // Process the Merkle tree data from Redis
-                            processMerkleTree(redisMerkleTree)
-                            // Generate Merkle tree proofs for the specified items
-                            generateProofExample()
-                        } else if let mysqlTimestamp = mysqlTimestamp {
-                            // Process the Merkle tree data from MySQL
-                            processMerkleTree(mysqlMerkleTree)
-                            // Generate Merkle tree proofs for the specified items
-                            generateProofExample()
-                        } else {
-                            print("No Merkle tree data found")
-                        }
+            for mysqlConnection in mysqlConnections {
+                mysqlConnection.withMySQLConnection { connection, error in
+                    guard error == nil else {
+                        print("Error connecting to MySQL: \(error!)")
+                        return
                     }
-                } else {
-                    print("No Merkle tree data found in MySQL")
+
+                    do {
+                        let mysqlResult = try connection.query(latestMerkleTreeQuery)
+                        if let mysqlMerkleTree = mysqlResult.first?["tree_data"] as? String {
+                            // Compare and process Merkle tree data
+                            compareAndProcessMerkleTree(redisMerkleTree, mysqlMerkleTree)
+                        } else {
+                            print("No Merkle tree data found in MySQL")
+                        }
+                    } catch {
+                        print("Error retrieving Merkle tree data from MySQL: \(error)")
+                    }
                 }
             }
         }
+    }
+}
+
+// Compare and process Merkle tree data and generate proofs
+func compareAndProcessMerkleTree(_ redisMerkleTree: String, _ mysqlMerkleTree: String) {
+    // Parse and process the Merkle tree data from Redis and MySQL
+    let redisMerkleRoot = calculateMerkleRoot(from: redisMerkleTree)
+    let mysqlMerkleRoot = calculateMerkleRoot(from: mysqlMerkleTree)
+
+    if redisMerkleRoot == mysqlMerkleRoot {
+        print("Merkle roots match. Data integrity is preserved.")
+        // Additional processing or actions when the Merkle roots match
+    } else {
+        print("Merkle roots do not match. Data integrity may be compromised.")
+        // Additional processing or actions when the Merkle roots do not match
+    }
+
+    // Generate Merkle tree proofs for the specified items
+    generateProofExample()
+}
+
+// Calculate the Merkle root hash from a given Merkle tree data
+func calculateMerkleRoot(from merkleTreeData: String) -> String {
+    // Split the Merkle tree data into individual leaves or nodes
+    let nodes = merkleTreeData.components(separatedBy: ",")
+
+    // Create an array to store hashed values
+    var hashedValues: [Data] = nodes.map { Data($0.utf8) }
+
+    // Iterate and hash pairs of values until a single root hash remains
+    while hashedValues.count > 1 {
+        var nextLevel: [Data] = []
+
+        for i in stride(from: 0, to: hashedValues.count, by: 2) {
+            var combinedData = hashedValues[i]
+            if i + 1 < hashedValues.count {
+                combinedData.append(hashedValues[i + 1])
+            }
+            
+            let hash = SHA256.hash(data: combinedData)
+            nextLevel.append(Data(hash))
+        }
+
+        hashedValues = nextLevel
+    }
+
+    // Convert the root hash to a hexadecimal string
+    return hashedValues.first?.hexEncodedString() ?? ""
+}
+
+// Generate Merkle tree proofs for the specified items
+func generateProofExample() {
+    // Assuming you have the leaf index for which you want to generate the proof
+    let targetLeafIndex = 2  // Replace with the actual leaf index
+
+    // Sample Merkle tree data
+    let merkleTreeData = ["leaf1", "leaf2", "leaf3", "leaf4"]
+    
+    // Calculate the Merkle root hash
+    let merkleRoot = calculateMerkleRoot(from: merkleTreeData.joined(separator: ","))
+
+    // Generate the Merkle proof path
+    let proofPath = generateProofPath(for: targetLeafIndex, in: merkleTreeData)
+
+    // Verify the proof
+    let isProofValid = verifyProof(targetLeafIndex: targetLeafIndex, proofPath: proofPath, rootHash: merkleRoot)
+    
+    if isProofValid {
+        print("Merkle proof is valid for leaf at index \(targetLeafIndex)")
+    } else {
+        print("Merkle proof is not valid for leaf at index \(targetLeafIndex)")
+    }
+}
+
+// Generate a Merkle proof path for a specific leaf index
+func generateProofPath(for leafIndex: Int, in merkleTreeData: [String]) -> [String] {
+    var proofPath: [String] = []
+    var currentIndex = leafIndex
+    
+    while currentIndex > 0 {
+        let siblingIndex = (currentIndex % 2 == 0) ? (currentIndex - 1) : (currentIndex + 1)
+        let siblingNode = merkleTreeData[siblingIndex]
+        proofPath.append(siblingNode)
+        
+        currentIndex = (currentIndex - 1) / 2
+    }
+    
+    return proofPath
+}
+
+// Verify a Merkle proof
+func verifyProof(targetLeafIndex: Int, proofPath: [String], rootHash: String) -> Bool {
+    var computedHash = Data(proofPath[0].utf8)
+
+    for i in 1..<proofPath.count {
+        let siblingData = Data(proofPath[i].utf8)
+        if targetLeafIndex % 2 == 0 {
+            computedHash = CryptoKit.SHA256.hash(data: computedHash + siblingData)
+        } else {
+            computedHash = CryptoKit.SHA256.hash(data: siblingData + computedHash)
+        }
+        targetLeafIndex /= 2
+    }
+
+    let computedHashHex = computedHash.map { String(format: "%02hhx", $0) }.joined()
+    return computedHashHex == rootHash
+}
+
+// Helper extension to convert Data to hexadecimal string
+extension Data {
+    func hexEncodedString() -> String {
+        return map { String(format: "%02hhx", $0) }.joined()
     }
 }
 
