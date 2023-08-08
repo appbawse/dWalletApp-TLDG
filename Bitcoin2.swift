@@ -1137,15 +1137,6 @@ func fetchTransactionsForCurrentBlock(_ blockId: Int) -> [Transaction]? {
     return block
 }
 
-// Usage
-if let block = fetchBlockByTransactionID("transaction123") {
-    print("Block ID: \(block.id)")
-    print("Block Hash: \(block.hash)")
-    // Print other block details as needed
-} else {
-    print("Block not found for the given Transaction ID.")
-}
-
 func generateNonce() -> Int {
     return Int.random(in: 1...100000)
 }
