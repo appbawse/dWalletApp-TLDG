@@ -280,26 +280,32 @@ processReceivedData()
         balanceTextField.text = ""
     }
 
-    @IBAction func sendBlockMined(_ sender: UIButton) {
-        // Generate the encrypted JWT
-        guard let encryptedJWT = generateEncryptedJWT() else {
-            print("Error generating encrypted JWT")
-            return
-        }
-
-        // Send the encrypted JWT to all connected peers
-        let message = ["encryptedJWT": encryptedJWT]
-        guard let data = try? JSONSerialization.data(withJSONObject: message, options: []) else {
-            print("Error serializing message")
-            return
-        }
-
-        do {
-            try session.send(data, toPeers: session.connectedPeers, with: .reliable)
-        } catch {
-            print("Error sending data: \(error)")
-        }
+@IBAction func sendBlockMined(_ sender: UIButton) {
+    // Generate the encrypted JWT
+    guard let encryptedJWT = generateEncryptedJWT() else {
+        print("Error generating encrypted JWT")
+        return
     }
+
+    // Generate the encrypted Merkle root
+    guard let encryptedMerkleRoot = encryptMerkleRoot() else {
+        print("Error generating encrypted Merkle root")
+        return
+    }
+
+    // Send the encrypted JWT and encrypted Merkle root to all connected peers
+    let message = ["encryptedJWT": encryptedJWT, "encryptedMerkleRoot": encryptedMerkleRoot]
+    guard let data = try? JSONSerialization.data(withJSONObject: message, options: []) else {
+        print("Error serializing message")
+        return
+    }
+
+    do {
+        try session.send(data, toPeers: session.connectedPeers, with: .reliable)
+    } catch {
+        print("Error sending data: \(error)")
+    }
+}
 
     // MARK: - Encryption and Decryption
 
