@@ -2,6 +2,9 @@ import Foundation
 import MultipeerConnectivity
 import CryptoKitRSA
 
+// Create an instance of MCSession
+let session: MCSession = createMCSession()
+
 // Simulate a user creating a transaction
 func simulateTransaction() {
     let fromAddressId = 123
