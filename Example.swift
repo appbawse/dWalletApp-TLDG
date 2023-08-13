@@ -2,8 +2,35 @@ import Foundation
 import MultipeerConnectivity
 import CryptoKitRSA
 
-// Create an instance of MCSession
-let session: MCSession = createMCSession()
+class ViewController: UIViewController, MCSessionDelegate, MCBrowserViewControllerDelegate {
+
+    var session: MCSession!
+    var advertiser: MCNearbyServiceAdvertiser!
+    var privateKey: P256.Signing.PrivateKey!
+    var publicKey: P256.Signing.PublicKey!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupMultipeerConnectivity()
+        setupKeys()
+    }
+
+    func setupMultipeerConnectivity() {
+        let localPeerID = MCPeerID(displayName: UIDevice.current.name)
+        let session = MCSession(peer: localPeerID)
+        session.delegate = self
+        
+        let advertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: nil, serviceType: "my-service")
+        advertiser.delegate = self
+        
+        self.session = session
+        self.advertiser = advertiser
+    }
+
+    func setupKeys() {
+        privateKey = P256.Signing.PrivateKey()
+        publicKey = privateKey.publicKey
+    }
 
 // Simulate a user creating a transaction
 func simulateTransaction() {
@@ -276,3 +303,4 @@ processReceivedData(receivedEncryptedJWTString: receivedEncryptedJWTString, rece
             return nil
         }
     }
+}
