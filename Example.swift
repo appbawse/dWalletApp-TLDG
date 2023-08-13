@@ -156,7 +156,11 @@ simulateMerkleTreeProcessing()
 simulateUserAddressTransaction()
 simulateGettingTransactions()
 simulateMerkleProofVerification()
-processReceivedData()
+
+// Simulate processing received data
+let receivedEncryptedJWTString = "..."
+let receivedEncryptedMerkleRootString = "..."
+processReceivedData(receivedEncryptedJWTString: receivedEncryptedJWTString, receivedEncryptedMerkleRootString: receivedEncryptedMerkleRootString)
 
    // MARK: - MCNearbyServiceBrowserDelegate
 
