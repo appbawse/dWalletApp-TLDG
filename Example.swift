@@ -251,62 +251,6 @@ processReceivedData()
         present(mcBrowser, animated: true, completion: nil)
     }
 
-  @IBAction func createAndSaveTransactionButtonTapped(_ sender: UIButton) {
-        // Get the input values from the text fields
-        guard let fromAddressIdText = fromAddressIdTextField.text,
-              let toAddressIdText = toAddressIdTextField.text,
-              let balanceText = balanceTextField.text,
-              let fromAddressId = Int(fromAddressIdText),
-              let toAddressId = Int(toAddressIdText),
-              let balance = Decimal(string: balanceText)
-        else {
-            print("Invalid input values.")
-            return
-        }
-
-        // Create and save the transaction
-        createAndSaveTransaction(fromAddressId: fromAddressId, toAddressId: toAddressId, balance: balance)
-
-        // Optionally, you can display a success message or perform other actions after creating and saving the transaction.
-        // For example, show an alert:
-        let alertController = UIAlertController(title: "Transaction Saved", message: "Transaction created and saved successfully!", preferredStyle: .alert)
-        let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
-        alertController.addAction(okAction)
-        present(alertController, animated: true, completion: nil)
-
-        // Clear the text fields after creating and saving the transaction
-        fromAddressIdTextField.text = ""
-        toAddressIdTextField.text = ""
-        balanceTextField.text = ""
-    }
-
-@IBAction func sendBlockMined(_ sender: UIButton) {
-    // Generate the encrypted JWT
-    guard let encryptedJWT = generateEncryptedJWT() else {
-        print("Error generating encrypted JWT")
-        return
-    }
-
-    // Generate the encrypted Merkle root
-    guard let encryptedMerkleRoot = encryptMerkleRoot() else {
-        print("Error generating encrypted Merkle root")
-        return
-    }
-
-    // Send the encrypted JWT and encrypted Merkle root to all connected peers
-    let message = ["encryptedJWT": encryptedJWT, "encryptedMerkleRoot": encryptedMerkleRoot]
-    guard let data = try? JSONSerialization.data(withJSONObject: message, options: []) else {
-        print("Error serializing message")
-        return
-    }
-
-    do {
-        try session.send(data, toPeers: session.connectedPeers, with: .reliable)
-    } catch {
-        print("Error sending data: \(error)")
-    }
-}
-
     // MARK: - Encryption and Decryption
 
     func encrypt(data: Data) -> Data? {
