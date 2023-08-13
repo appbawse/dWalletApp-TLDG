@@ -15,17 +15,17 @@ class ViewController: UIViewController, MCSessionDelegate, MCBrowserViewControll
         setupKeys()
     }
 
-    func setupMultipeerConnectivity() {
-        let localPeerID = MCPeerID(displayName: UIDevice.current.name)
-        let session = MCSession(peer: localPeerID)
-        session.delegate = self
-        
-        let advertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: nil, serviceType: "my-service")
-        advertiser.delegate = self
-        
-        self.session = session
-        self.advertiser = advertiser
-    }
+func setupMultipeerConnectivity() {
+    let localPeerID = MCPeerID(displayName: UIDevice.current.name)
+    let session = createMCSession()  // Create an instance of MCSession
+    session.delegate = self
+    
+    let advertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: nil, serviceType: "my-service")
+    advertiser.delegate = self
+    
+    self.session = session
+    self.advertiser = advertiser
+}
 
     func setupKeys() {
         privateKey = P256.Signing.PrivateKey()
