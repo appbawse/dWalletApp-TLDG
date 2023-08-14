@@ -1123,25 +1123,23 @@ struct MyClaims: Codable {
     let payload: [String: Any] // Payload data
 }
 
-// Function to generate ECDSA-based JWT signature
-func generateECDSASignature(header: Data, claims: Data, privateKey: P256.Signing.PrivateKey) throws -> Data {
+    func generateEd25519Signature(header: Data, claims: Data, privateKey: Ed25519.Signing.PrivateKey) throws -> Data {
     let unsignedJWT = "\(header.base64EncodedString()).\(claims.base64EncodedString())"
     guard let unsignedData = unsignedJWT.data(using: .utf8) else {
         throw CryptoError.failedToEncodeData
     }
     
     let signature = try privateKey.signature(for: unsignedData)
-    return signature.derRepresentation
+    return signature.rawRepresentation
 }
 
-// Function to verify ECDSA-based JWT signature
-func verifyECDSASignature(header: Data, claims: Data, signature: Data, publicKey: P256.Signing.PublicKey) -> Bool {
+    func verifyEd25519Signature(header: Data, claims: Data, signature: Data, publicKey: Ed25519.Signing.PublicKey) -> Bool {
     let unsignedJWT = "\(header.base64EncodedString()).\(claims.base64EncodedString())"
     guard let unsignedData = unsignedJWT.data(using: .utf8) else {
         return false
     }
     
-    let derSignature = P256.Signing.ECDSASignature(derRepresentation: signature)
+    let derSignature = Ed25519.Signing.ECDSASignature(rawRepresentation: signature)
     return publicKey.isValidSignature(derSignature, for: unsignedData)
 }
 
