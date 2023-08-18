@@ -1264,10 +1264,15 @@ func handleReceivedData(_ data: Data) {
 
     // Verify the JWT signature using the public key
     let headerData = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9".data(using: .utf8)!
-    if verifyECDSASignature(header: headerData, claims: jwtData, signature: jwtPayload.signature, publicKey: publicKey) {
-        print("JWT signature verified.")
-    } else {
-        print("Invalid JWT signature.")
+    do {
+        if try verifyEd25519Signature(header: headerData, claims: jwtData, signature: jwtPayload.signature, publicKey: publicKey) {
+            print("JWT signature verified.")
+        } else {
+            print("Invalid JWT signature.")
+            return
+        }
+    } catch {
+        print("Error verifying JWT signature: \(error)")
         return
     }
 
@@ -1282,3 +1287,4 @@ func handleReceivedData(_ data: Data) {
     // Process the received Merkle root data
     processMerkleTree(merkleRoot)
 }
+
