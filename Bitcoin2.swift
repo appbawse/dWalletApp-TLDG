@@ -169,8 +169,8 @@ func connectToRedisAndGenerateProofs() {
             }
 
             // MySQL connection details for two databases
-            let mysqlConfig1 = MySQLDatabaseConfig(hostname: "localhost", username: "user1", password: "password1", database: "db1")
-            let mysqlConfig2 = MySQLDatabaseConfig(hostname: "localhost", username: "user2", password: "password2", database: "db2")
+            let mysqlConfig1 = MySQLDatabaseConfig(hostname: "localhost", username: "user1", password: "password1", database: "db1", privateKey: "privateKey1")
+            let mysqlConfig2 = MySQLDatabaseConfig(hostname: "localhost", username: "user2", password: "password2", database: "db2", privateKey: "privateKey2")
 
             // Create MySQL connections
             let mysql1 = MySQLConnectionSource(config: mysqlConfig1)
