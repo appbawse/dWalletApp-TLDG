@@ -1113,6 +1113,52 @@ func generateEncryptedJWT() -> String? {
     return encryptedData.base64EncodedString()
 }
 
+    // Simulate fetching transactions for a specific user
+func fetchUserTransactions(forUserID userID: Int) -> [Transaction]? {
+    var transactions: [Transaction] = []
+
+    // Replace "your_table_name" and column names accordingly
+    let query = "SELECT * FROM Transaction WHERE user_id = \(userID)"
+
+    guard let result = connection.query(statement: query) else {
+        return nil
+    }
+
+    while let row = result.nextResult() {
+        guard let fromAddressId = row["from_address_id"] as? Int,
+              let toAddressId = row["to_address_id"] as? Int,
+              let balance = row["balance"] as? Decimal,
+              let timestamp = row["timestamp"] as? String,
+              let hash = row["hash"] as? String
+        else {
+            continue
+        }
+
+        let transaction = Transaction(fromAddressId: fromAddressId, toAddressId: toAddressId, balance: balance, timestamp: timestamp, hash: hash)
+        transactions.append(transaction)
+    }
+
+    return transactions
+}
+
+// Simulate fetching the balance for a specific user
+func fetchUserBalance(forUserID userID: Int) -> Decimal? {
+    // Replace "your_table_name" and column names accordingly
+    let query = "SELECT balance FROM User WHERE user_id = \(userID)"
+
+    guard let result = connection.query(statement: query), let row = result.nextResult() else {
+        print("Failed to fetch user balance.")
+        return nil
+    }
+
+    guard let balance = row["balance"] as? Decimal else {
+        print("Balance not found.")
+        return nil
+    }
+
+    return balance
+}
+
 import Foundation
 import CryptoKit
 import MySQLDriver
