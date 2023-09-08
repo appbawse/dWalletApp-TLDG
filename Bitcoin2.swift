@@ -56,6 +56,7 @@ struct Block {
     let timestamp: Date
     let previousHash: String
     let merkleRoot: String
+    let nonce: Int
     let hash: String
 }
 
