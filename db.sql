@@ -30,6 +30,7 @@ CREATE TABLE Block (
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     previous_hash TEXT NOT NULL,
     merkle_root TEXT NOT NULL,
+    nonce INT(11) NOT NULL,
     hash TEXT NOT NULL
 );
 
